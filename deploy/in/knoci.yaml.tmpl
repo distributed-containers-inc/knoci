@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knoci
+  namespace: kube-system
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: knoci
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: knoci
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knoci
+subjects:
+  - kind: ServiceAccount
+    name: knoci
+    namespace: kube-system
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knoci
+  namespace: kube-system
+  labels:
+    app: knoci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knoci
+  template:
+    metadata:
+      labels:
+        app: knoci
+    spec:
+      serviceAccountName: knoci
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: knoci
+        image: {{getenv "REGISTRY_HOST"}}/knoci:{{getenv "IMAGE_TAG"}}

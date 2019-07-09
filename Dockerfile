@@ -2,12 +2,13 @@ FROM golang:1.12.7-stretch AS gobuild
 
 WORKDIR /go/src/github.com/distributed-containers-inc/knoci
 ENV GO111MODULE on
+ENV CGO_ENABLED 0
 
 COPY go.mod go.sum ./
 RUN go get -d -v ./...
 COPY main.go ./
-RUN go build -o /app main.go
+RUN go build -o ./app main.go && chmod 755 ./app
 
 FROM scratch
-COPY --from=gobuild /app /app
+COPY --from=gobuild /go/src/github.com/distributed-containers-inc/knoci/app /
 ENTRYPOINT ["/app"]
