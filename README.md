@@ -10,3 +10,29 @@ This allows you to turn `build && test && deploy` into `build && deploy`, with y
 3. Knoci checksums your tests, and only runs ones whose files or dependencies have changed
 
 © Distributed Containers Inc. 2019
+
+## Usage
+
+### Installing the Operator
+TODO
+
+### Dockerizing your tests
+TODO
+
+### Deploying your tests
+#### Complete spec for a Test
+
+```
+# apiVersion and kind are frozen for a specific release, use the ones defined here
+apiVersion: tests.knoci.distributedcontainers.com/v1alpha1
+kind: Test
+metadata:
+  # name and namespace mean the same thing they do for other kubernetes objects
+  name: api-unit-tests
+  namespace: api-unit-tests
+spec:
+  image: registry.example.com/ApiUnitTests:v1.0.0
+  parallelization: 3
+status:
+  state: Running
+```

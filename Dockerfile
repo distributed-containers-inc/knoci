@@ -6,8 +6,9 @@ ENV CGO_ENABLED 0
 
 COPY go.mod go.sum ./
 RUN go get -d -v ./...
-COPY main.go ./
-RUN go build -o ./app main.go && chmod 755 ./app
+COPY cmd ./cmd
+COPY pkg ./pkg
+RUN go build -o ./app cmd/operator/main.go && chmod 755 ./app
 
 FROM scratch
 COPY --from=gobuild /go/src/github.com/distributed-containers-inc/knoci/app /

@@ -1,13 +1,16 @@
-package main
+package operator
 
 import (
   "fmt"
+  "github.com/distributed-containers-inc/knoci/pkg/controller"
+  "os"
   "time"
 
   "k8s.io/apimachinery/pkg/api/errors"
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
   "k8s.io/client-go/kubernetes"
   "k8s.io/client-go/rest"
+  apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
 func main() {
@@ -20,6 +23,13 @@ func main() {
   clientset, err := kubernetes.NewForConfig(config)
   if err != nil {
     panic(err.Error())
+  }
+
+  apiextcli := apiextclient.NewForConfigOrDie(config)
+
+  err = controller.CreateResourceDefinition(apiextcli)
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "Could not create the custom resource definition: %s", err.Error())
   }
 
   for {
