@@ -5,7 +5,7 @@ ENV GO111MODULE on
 ENV CGO_ENABLED 0
 
 COPY go.mod go.sum ./
-RUN go get -d -v ./...
+RUN go get -d -v cmd/operator/main.go
 COPY cmd ./cmd
 COPY pkg ./pkg
 RUN go build -o ./app cmd/operator/main.go && chmod 755 ./app
