@@ -36,3 +36,9 @@ spec:
 status:
   state: Running
 ```
+
+## Building
+
+To build knoci,
+1. First install [sanic](https://github.com/distributed-containers-inc/sanic) and its dependencies
+2. Run `sanic env dev sanic build` to build the latest version of the docker image.
