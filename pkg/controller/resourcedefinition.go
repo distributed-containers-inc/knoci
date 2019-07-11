@@ -12,6 +12,10 @@ func BoolPointer(val bool) *bool {
 	return &val
 }
 
+func StringPointer(val string) *string {
+	return &val
+}
+
 func NewResourceDefinition(
 	specSchema apiextv1beta1.JSONSchemaProps,
 	names apiextv1beta1.CustomResourceDefinitionNames,

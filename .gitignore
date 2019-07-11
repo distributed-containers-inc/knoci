@@ -2,3 +2,6 @@
 /.idea
 /logs
 /deploy/out
+venv3.7/
+/example/logs
+__pycache__
