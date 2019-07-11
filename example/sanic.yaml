@@ -1,0 +1,4 @@
+environments:
+  dev:
+    namespace: knoci-example
+    clusterProvisioner: localdev

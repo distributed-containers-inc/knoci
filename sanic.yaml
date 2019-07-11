@@ -1,3 +1,7 @@
 environments:
   dev:
     clusterProvisioner: localdev
+
+build:
+  ignoreDirs:
+  - example

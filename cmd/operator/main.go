@@ -27,10 +27,12 @@ func main() {
 
   apiextcli := apiextclient.NewForConfigOrDie(config)
 
-  err = controller.CreateResourceDefinition(apiextcli)
+  err = controller.CreateTestResourceDefinition(apiextcli)
   if err != nil {
     fmt.Fprintf(os.Stderr, "Could not create the custom resource definition: %s", err.Error())
+    os.Exit(1)
   }
+  fmt.Println("Successfully created the Test resource definition.")
 
   for {
     pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
