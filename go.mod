@@ -58,6 +58,7 @@ require (
 	google.golang.org/grpc v1.22.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
+	k8s.io/api v0.0.0-20190703205437-39734b2a72fe
 	k8s.io/apiextensions-apiserver v0.0.0-20190704050600-357b4270afe4
 	k8s.io/apimachinery v0.0.0-20190703205208-4cfb76a8bf76
 	k8s.io/apiserver v0.0.0-20190707085829-7f6005dcdcb2 // indirect
