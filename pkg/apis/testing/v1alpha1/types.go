@@ -5,6 +5,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const Version = "v1alpha1"
+
 // +k8s:openapi-gen=true
 type Test struct {
 	metav1.TypeMeta `json:",inline"`
