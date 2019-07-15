@@ -45,6 +45,8 @@ func CreateTestResourceDefinition(clientset apiextclient.Interface) error {
 	return CreateResourceDefinition(clientset, resourceDef)
 }
 
+//Attribution: Prometheus Operator
+//WaitForCRDReady waits until a CRD specified by a given listfunc exists.
 func WaitForCRDReady(listFunc func(opts metav1.ListOptions) (runtime.Object, error)) error {
 	err := wait.Poll(3*time.Second, 10*time.Minute, func() (bool, error) {
 		_, err := listFunc(metav1.ListOptions{})
