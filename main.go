@@ -21,14 +21,9 @@ func main() {
     panic(err.Error())
   }
 
-  // creates the clientset
-  clientset, err := kubernetes.NewForConfig(config)
-  if err != nil {
-    panic(err.Error())
-  }
-
-  apiextcli := apiextclient.New(clientset.RESTClient())
-  testscli := versioned.New(clientset.RESTClient())
+  kubecli := kubernetes.NewForConfigOrDie(config)
+  apiextcli := apiextclient.NewForConfigOrDie(config)
+  testscli := versioned.NewForConfigOrDie(config)
 
   err = controller.CreateTestResourceDefinition(apiextcli)
   if err != nil {
@@ -45,7 +40,7 @@ func main() {
   fmt.Println("Successfully created the Test resource definition.")
 
   for {
-    pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+    pods, err := kubecli.CoreV1().Pods("").List(metav1.ListOptions{})
     if err != nil {
       panic(err.Error())
     }
@@ -54,7 +49,7 @@ func main() {
     // Examples for error handling:
     // - Use helper functions like e.g. errors.IsNotFound()
     // - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
-    _, err = clientset.CoreV1().Pods("default").Get("example-xxxxx", metav1.GetOptions{})
+    _, err = kubecli.CoreV1().Pods("default").Get("example-xxxxx", metav1.GetOptions{})
     if errors.IsNotFound(err) {
       fmt.Printf("Pod not found\n")
     } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
