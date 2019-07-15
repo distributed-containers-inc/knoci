@@ -8,9 +8,10 @@ const Version = "v1alpha1"
 
 // +k8s:openapi-gen=true
 type Test struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec TestSpec `json:"spec"`
+	Spec              TestSpec   `json:"spec"`
+	Status            TestStatus `json:"status"`
 }
 
 // +k8s:openapi-gen=true
@@ -20,3 +21,6 @@ type TestSpec struct {
 	Parallelism int `json:"parallelism"`
 }
 
+type TestStatus struct {
+	State string `json:"state"`
+}

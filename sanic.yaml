@@ -1,14 +1,20 @@
 commands:
   - name: codegen
     command: |
-      export PACKAGE=github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1
-      openapi-gen --v=1 -i $PACKAGE,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/api/core/v1 -p $PACKAGE --report-filename api_violations.list
+      export PACKAGE=github.com/distributed-containers-inc/knoci
+      openapi-gen --v=1 -i $PACKAGE/pkg/apis/testing/v1alpha1 -p $PACKAGE/pkg/apis/testing/v1alpha1 --report-filename api_violations.list
       if grep -v -e k8s.io/api/ -e k8s.io/apimachinery/ api_violations.list; then
         echo 'Violations found!'
         exit 1
       else
         rm api_violations.list
       fi
+      client-gen \
+        --input-base "" \
+        --input="$PACKAGE/pkg/apis/testing/v1alpha1" \
+        --clientset-name="versioned" \
+        --output-package="$PACKAGE/pkg/client"
+
   - name: update
     command: |
       set -eu -o pipefail

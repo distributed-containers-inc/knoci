@@ -2,6 +2,7 @@ package main
 
 import (
   "fmt"
+  "github.com/distributed-containers-inc/knoci/pkg/client/versioned"
   "github.com/distributed-containers-inc/knoci/pkg/controller"
   "os"
   "time"
@@ -25,7 +26,9 @@ func main() {
     panic(err.Error())
   }
 
-  apiextcli := apiextclient.NewForConfigOrDie(config)
+  apiextcli := apiextclient.New(clientset.RESTClient())
+  testscli := versioned.New(clientset.RESTClient())
+  testscli.TestingV1alpha1()
 
   err = controller.CreateTestResourceDefinition(apiextcli)
   if err != nil {
