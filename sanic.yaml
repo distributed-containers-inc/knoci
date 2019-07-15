@@ -1,15 +1,21 @@
 commands:
   - name: codegen
     command: |
+      echo 'Building openapi schema...'
       export PACKAGE=github.com/distributed-containers-inc/knoci
-      openapi-gen --v=1 -i $PACKAGE/pkg/apis/testing/v1alpha1 -p $PACKAGE/pkg/apis/testing/v1alpha1 --report-filename api_violations.list
+      openapi-gen --v=2 -i $PACKAGE/pkg/apis/testing/v1alpha1 -p $PACKAGE/pkg/apis/testing/v1alpha1 --report-filename api_violations.list
       if grep -v -e k8s.io/api/ -e k8s.io/apimachinery/ api_violations.list; then
         echo 'Violations found!'
         exit 1
       else
         rm api_violations.list
       fi
+      deepcopy-gen \
+        --v=2 \
+        --input-dirs ${PACKAGE}/pkg/apis/testing/v1alpha1 \
+        --output-file-base 'zz_deepcopy_generated'
       client-gen \
+        --v=2 \
         --input-base "" \
         --input="$PACKAGE/pkg/apis/testing/v1alpha1" \
         --clientset-name="versioned" \

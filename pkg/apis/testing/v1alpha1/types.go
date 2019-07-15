@@ -6,6 +6,9 @@ import (
 
 const Version = "v1alpha1"
 
+// +genclient
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/kubernetes/runtime.Object,k8s.io/kubernetes/runtime.List
 // +k8s:openapi-gen=true
 type Test struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -15,6 +18,7 @@ type Test struct {
 }
 
 // +k8s:openapi-gen=true
+// +k8s:deepcopy-gen=true
 type TestSpec struct {
 	Image string `json:"image"`
 	// +optional
