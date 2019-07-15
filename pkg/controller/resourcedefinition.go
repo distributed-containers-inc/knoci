@@ -23,13 +23,16 @@ func CreateTestResourceDefinition(clientset apiextclient.Interface) error {
 	resourceDef := crdvalidation.NewCustomResourceDefinition(crdvalidation.Config{
 		Kind:               "Test",
 		Plural:             "tests",
-		ShortNames:         []string{"tst", "te"},
+		ShortNames:         []string{"ts", "te"},
 		SpecDefinitionName: "github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.Test",
 		Group:              "knoci.distributedcontainers.com",
 
 		EnableValidation:      true,
 		Version:               testingv1alpha1.Version,
 		GetOpenAPIDefinitions: testingv1alpha1.GetOpenAPIDefinitions,
+
+		SpecReplicasPath: ".spec.parallelism",
+		StatusReplicasPath: ".status.parallelism",
 	})
 
 	return CreateResourceDefinition(clientset, resourceDef)

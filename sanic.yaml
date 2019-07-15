@@ -5,9 +5,19 @@ commands:
       openapi-gen --v=1 -i $PACKAGE,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/api/core/v1 -p $PACKAGE --report-filename api_violations.list
       if grep -v -e k8s.io/api/ -e k8s.io/apimachinery/ api_violations.list; then
         echo 'Violations found!'
+        exit 1
       else
         rm api_violations.list
       fi
+  - name: update
+    command: |
+      set -eu -o pipefail
+      echo 'Generating sources...'
+      sanic run codegen
+      sanic build --push
+      sanic kubectl delete crd tests.knoci.distributedcontainers.com || true
+      sanic deploy
+
 
 environments:
   dev:

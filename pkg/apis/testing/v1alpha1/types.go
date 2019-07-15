@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,6 +15,8 @@ type Test struct {
 
 // +k8s:openapi-gen=true
 type TestSpec struct {
-	Containers []corev1.Container `json:"containers"`
+	Image string `json:"image"`
+	// +optional
+	Parallelism int `json:"parallelism"`
 }
 
