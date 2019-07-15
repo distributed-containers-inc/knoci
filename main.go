@@ -4,6 +4,7 @@ import (
   "fmt"
   "github.com/distributed-containers-inc/knoci/pkg/client/versioned"
   "github.com/distributed-containers-inc/knoci/pkg/controller"
+  "k8s.io/apimachinery/pkg/runtime"
   "os"
   "time"
 
@@ -28,11 +29,17 @@ func main() {
 
   apiextcli := apiextclient.New(clientset.RESTClient())
   testscli := versioned.New(clientset.RESTClient())
-  testscli.TestingV1alpha1()
 
   err = controller.CreateTestResourceDefinition(apiextcli)
   if err != nil {
     fmt.Fprintf(os.Stderr, "Could not create the custom resource definition: %s", err.Error())
+    os.Exit(1)
+  }
+  err = controller.WaitForCRDReady(func(options metav1.ListOptions) (runtime.Object, error) {
+    return testscli.TestingV1alpha1().Tests("default").List(options)
+  })
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "Could not wait for the Custom Resource Definition to exist: %s", err.Error())
     os.Exit(1)
   }
   fmt.Println("Successfully created the Test resource definition.")

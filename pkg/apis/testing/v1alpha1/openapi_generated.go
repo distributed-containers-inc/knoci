@@ -29,8 +29,7 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.Test":     schema_pkg_apis_testing_v1alpha1_Test(ref),
-		"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.TestSpec": schema_pkg_apis_testing_v1alpha1_TestSpec(ref),
+		"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.Test": schema_pkg_apis_testing_v1alpha1_Test(ref),
 	}
 }
 
@@ -74,30 +73,5 @@ func schema_pkg_apis_testing_v1alpha1_Test(ref common.ReferenceCallback) common.
 		},
 		Dependencies: []string{
 			"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.TestSpec", "github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1.TestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_pkg_apis_testing_v1alpha1_TestSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Properties: map[string]spec.Schema{
-					"image": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"parallelism": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-				},
-				Required: []string{"image"},
-			},
-		},
-		Dependencies: []string{},
 	}
 }

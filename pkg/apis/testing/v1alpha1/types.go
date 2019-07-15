@@ -8,7 +8,7 @@ const Version = "v1alpha1"
 
 // +genclient
 // +k8s:deepcopy-gen=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/kubernetes/runtime.Object,k8s.io/kubernetes/runtime.List
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 type Test struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -17,8 +17,6 @@ type Test struct {
 	Status            TestStatus `json:"status"`
 }
 
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=true
 type TestSpec struct {
 	Image string `json:"image"`
 	// +optional
@@ -27,4 +25,15 @@ type TestSpec struct {
 
 type TestStatus struct {
 	State string `json:"state"`
+}
+
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// TestList is a list of Test resources
+type TestList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Test `json:"items"`
 }
