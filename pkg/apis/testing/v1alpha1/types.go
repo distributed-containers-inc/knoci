@@ -28,7 +28,6 @@ type TestStatus struct {
 }
 
 // +k8s:deepcopy-gen=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TestList is a list of Test resources
 type TestList struct {
