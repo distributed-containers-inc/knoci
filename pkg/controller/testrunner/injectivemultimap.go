@@ -1,17 +1,18 @@
 package testrunner
 
 import (
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sync"
 )
 
-type TestInfoSet map[types.UID]*TestInfo
+type TestInfoSet map[types.UID]*v1alpha1.Test
 
-func (set TestInfoSet) delete(testInfo *TestInfo) {
+func (set TestInfoSet) delete(testInfo *v1alpha1.Test) {
 	delete(set, testInfo.UID)
 }
 
-func (set TestInfoSet) add(testInfo *TestInfo) {
+func (set TestInfoSet) add(testInfo *v1alpha1.Test) {
 	(set)[testInfo.UID] = testInfo
 }
 
@@ -29,7 +30,7 @@ func NewInjectiveMultimap() *InjectiveMultimap {
 	}
 }
 
-func (m *InjectiveMultimap) Put(state string, testInfo *TestInfo) {
+func (m *InjectiveMultimap) Put(state string, testInfo *v1alpha1.Test) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -39,13 +40,13 @@ func (m *InjectiveMultimap) Put(state string, testInfo *TestInfo) {
 	}
 
 	if _, ok := m.buckets[testInfo.Status.State]; !ok {
-		m.buckets[testInfo.Status.State] = make(map[types.UID]*TestInfo)
+		m.buckets[testInfo.Status.State] = make(map[types.UID]*v1alpha1.Test)
 	}
 	m.buckets[testInfo.Status.State].add(testInfo)
 	m.elementStateMap[testInfo.UID] = testInfo.Status.State
 }
 
-func (m *InjectiveMultimap) Delete(testInfo *TestInfo) {
+func (m *InjectiveMultimap) Delete(testInfo *v1alpha1.Test) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	if currState, ok := m.elementStateMap[testInfo.UID]; ok {
@@ -54,7 +55,7 @@ func (m *InjectiveMultimap) Delete(testInfo *TestInfo) {
 	}
 }
 
-func (m *InjectiveMultimap) ForAllOfState(state string, fn func(*TestInfo)) {
+func (m *InjectiveMultimap) ForAllOfState(state string, fn func(*v1alpha1.Test)) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

@@ -20,15 +20,18 @@ type Test struct {
 type TestSpec struct {
 	Image string `json:"image"`
 	// +optional
-	Parallelism int `json:"parallelism"`
+	Parallelism int64 `json:"parallelism"`
 }
 
 const StatePending = "Pending"
+const StateInitializingTestCount = "InitializingTestCount"
 const StateRunning = "Running"
 const StateSucceeded = "Success"
 const StateFailed = "Failed"
 type TestStatus struct {
 	State string `json:"state"`
+	NumberOfTests int64 `json:"numberOfTests"`
+	CanParallelize bool `json:"canParallelize"`
 }
 
 // +k8s:deepcopy-gen=true

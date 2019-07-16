@@ -2,7 +2,6 @@ package testrunner
 
 import (
 	"errors"
-	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -57,8 +56,12 @@ func (runner *TestRunner) Start() error {
 				return
 			}
 			runner.reconcile(tests.Items)
-			runner.holder.testStatuses.ForAllOfState(v1alpha1.StatePending, func(info *TestInfo) {
-				fmt.Println("Got a test in state pending:" + info.Namespace + "/" + info.Name)
+			runner.holder.testStatuses.ForAllOfState(v1alpha1.StatePending, func(test *v1alpha1.Test) {
+				runner.errors <- runner.ProcessTestParallelism(test)
+			})
+			runner.holder.testStatuses.ForAllOfState(v1alpha1.StateInitializingTestCount, func(test *v1alpha1.Test) {
+				//req := runner.KubeCli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container:"paralleltest"})
+				//body, err := req.DoRaw()
 			})
 			time.Sleep(time.Second * 5)
 		}
@@ -81,12 +84,11 @@ func (runner *TestRunner) reconcile(tests []v1alpha1.Test) {
 			if test.Status == nil {
 				test.Status = &v1alpha1.TestStatus{}
 			}
-			test.Status.State = v1alpha1.StatePending
-			runner.holder.AddTest(test)
-			_, err := runner.TestsCli.TestingV1alpha1().Tests(test.Namespace).UpdateStatus(test)
+			_, err := runner.SetState(test, v1alpha1.StatePending)
 			if err != nil {
 				runner.errors <- err
 			}
+			runner.holder.AddTest(test)
 		}
 	}
 }
