@@ -2,9 +2,12 @@ package testrunner
 
 import (
 	"errors"
+	"fmt"
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
@@ -17,11 +20,11 @@ type TestRunner struct {
 	KubeCli   *kubernetes.Clientset
 	TestsCli  *versioned.Clientset
 
-	tests *TestInfoHolder
+	holder *TestInfoHolder
 
 	running bool
 	Stop    chan bool
-	errors 	chan error
+	errors  chan error
 }
 
 func NewTestRunner(config *rest.Config) *TestRunner {
@@ -29,7 +32,7 @@ func NewTestRunner(config *rest.Config) *TestRunner {
 		ApiExtCli: apiextclient.NewForConfigOrDie(config),
 		KubeCli:   kubernetes.NewForConfigOrDie(config),
 		TestsCli:  versioned.NewForConfigOrDie(config),
-		tests:     NewTestInfoHolder(),
+		holder:    NewTestInfoHolder(),
 		Stop:      make(chan bool),
 		errors:    make(chan error),
 	}
@@ -53,11 +56,39 @@ func (runner *TestRunner) Start() error {
 				runner.errors <- err
 				return
 			}
-			runner.tests.Reconcile(tests.Items)
+			runner.reconcile(tests.Items)
+			runner.holder.testStatuses.ForAllOfState(v1alpha1.StatePending, func(info *TestInfo) {
+				fmt.Println("Got a test in state pending:" + info.Namespace + "/" + info.Name)
+			})
 			time.Sleep(time.Second * 5)
 		}
 	}()
 	return nil
+}
+
+func (runner *TestRunner) reconcile(tests []v1alpha1.Test) {
+	newTestMap := make(map[types.UID]*v1alpha1.Test)
+	for _, test := range tests {
+		newTestMap[test.UID] = &test
+	}
+	for key := range runner.holder.tests {
+		if _, ok := newTestMap[key]; !ok {
+			runner.holder.RemoveTest(key)
+		}
+	}
+	for key, test := range newTestMap {
+		if _, ok := runner.holder.tests[key]; !ok {
+			if test.Status == nil {
+				test.Status = &v1alpha1.TestStatus{}
+			}
+			test.Status.State = v1alpha1.StatePending
+			runner.holder.AddTest(test)
+			_, err := runner.TestsCli.TestingV1alpha1().Tests(test.Namespace).UpdateStatus(test)
+			if err != nil {
+				runner.errors <- err
+			}
+		}
+	}
 }
 
 func (runner *TestRunner) Wait() error {

@@ -14,7 +14,7 @@ type Test struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              TestSpec   `json:"spec"`
-	Status            TestStatus `json:"status"`
+	Status            *TestStatus `json:"status"`
 }
 
 type TestSpec struct {
@@ -23,6 +23,10 @@ type TestSpec struct {
 	Parallelism int `json:"parallelism"`
 }
 
+const StatePending = "Pending"
+const StateRunning = "Running"
+const StateSucceeded = "Success"
+const StateFailed = "Failed"
 type TestStatus struct {
 	State string `json:"state"`
 }
