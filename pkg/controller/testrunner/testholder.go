@@ -20,12 +20,8 @@ func NewTestInfoHolder() *TestInfoHolder {
 	}
 }
 
-func (holder *TestInfoHolder) AddTest(test *v1alpha1.Test) {
+func (holder *TestInfoHolder) TrackTest(test *v1alpha1.Test) {
 	holder.tests[test.UID] = test
-	holder.UpdateTestStatus(test)
-}
-
-func (holder *TestInfoHolder) UpdateTestStatus(test *v1alpha1.Test) {
 	holder.testStatuses.Put(test.Status.State, holder.tests[test.UID])
 }
 

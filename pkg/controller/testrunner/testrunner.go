@@ -57,11 +57,16 @@ func (runner *TestRunner) Start() error {
 			}
 			runner.reconcile(tests.Items)
 			runner.holder.testStatuses.ForAllOfState(v1alpha1.StatePending, func(test *v1alpha1.Test) {
-				runner.errors <- runner.ProcessTestParallelism(test)
+				err := runner.ProcessTestParallelism(test)
+				if err != nil {
+					runner.errors <- err
+				}
 			})
 			runner.holder.testStatuses.ForAllOfState(v1alpha1.StateInitializingTestCount, func(test *v1alpha1.Test) {
-				//req := runner.KubeCli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container:"paralleltest"})
-				//body, err := req.DoRaw()
+				err := runner.ProcessTestCount(test)
+				if err != nil {
+					runner.errors <- err
+				}
 			})
 			time.Sleep(time.Second * 5)
 		}
@@ -81,14 +86,14 @@ func (runner *TestRunner) reconcile(tests []v1alpha1.Test) {
 	}
 	for key, test := range newTestMap {
 		if _, ok := runner.holder.tests[key]; !ok {
-			if test.Status == nil {
-				test.Status = &v1alpha1.TestStatus{}
-			}
-			_, err := runner.SetState(test, v1alpha1.StatePending)
+			test.Status.State = v1alpha1.StatePending
+			runner.holder.TrackTest(test)
+			_, err := runner.SetState(test, v1alpha1.StatePending, "The test has just been created.")
 			if err != nil {
 				runner.errors <- err
 			}
-			runner.holder.AddTest(test)
+		} else {
+			runner.holder.TrackTest(test)
 		}
 	}
 }

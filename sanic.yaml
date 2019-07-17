@@ -42,6 +42,11 @@ commands:
       sanic kubectl delete crd tests.knoci.distributedcontainers.com || true
       sanic deploy
 
+  - name: knoci_logs
+    command: |
+      set -eu -o pipefail
+      sanic kubectl get po -n kube-system -o name | grep knoci | xargs sanic kubectl logs -n kube-system
+
 
 environments:
   dev:

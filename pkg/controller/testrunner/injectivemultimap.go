@@ -36,14 +36,13 @@ func (m *InjectiveMultimap) Put(state string, testInfo *v1alpha1.Test) {
 
 	if currState, ok := m.elementStateMap[testInfo.UID]; ok {
 		m.buckets[currState].delete(testInfo)
-		delete(m.elementStateMap, testInfo.UID)
 	}
 
-	if _, ok := m.buckets[testInfo.Status.State]; !ok {
-		m.buckets[testInfo.Status.State] = make(map[types.UID]*v1alpha1.Test)
+	if _, ok := m.buckets[state]; !ok {
+		m.buckets[state] = make(TestInfoSet)
 	}
-	m.buckets[testInfo.Status.State].add(testInfo)
-	m.elementStateMap[testInfo.UID] = testInfo.Status.State
+	m.buckets[state].add(testInfo)
+	m.elementStateMap[testInfo.UID] = state
 }
 
 func (m *InjectiveMultimap) Delete(testInfo *v1alpha1.Test) {
@@ -57,11 +56,17 @@ func (m *InjectiveMultimap) Delete(testInfo *v1alpha1.Test) {
 
 func (m *InjectiveMultimap) ForAllOfState(state string, fn func(*v1alpha1.Test)) {
 	m.mutex.Lock()
-	defer m.mutex.Unlock()
 
+	var tests []*v1alpha1.Test
 	if keys, ok := m.buckets[state]; ok {
 		for _, test := range keys {
-			fn(test)
+			tests = append(tests, test)
 		}
+	}
+
+	m.mutex.Unlock()
+
+	for _, test := range tests {
+		fn(test)
 	}
 }

@@ -13,7 +13,7 @@ const Version = "v1alpha1"
 type Test struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              TestSpec   `json:"spec"`
+	Spec              TestSpec    `json:"spec"`
 	Status            *TestStatus `json:"status"`
 }
 
@@ -25,16 +25,20 @@ type TestSpec struct {
 
 const StatePending = "Pending"
 const StateInitializingTestCount = "InitializingTestCount"
+const StateRunnable = "StateRunnable"
 const StateRunning = "Running"
 const StateSucceeded = "Success"
 const StateFailed = "Failed"
+
 type TestStatus struct {
-	State string `json:"state"`
-	NumberOfTests int64 `json:"numberOfTests"`
-	CanParallelize bool `json:"canParallelize"`
+	State          string `json:"state"`
+	Reason         string `json:"reason"`
+	NumberOfTests  int64  `json:"numberOfTests"`
+	CanParallelize bool   `json:"canParallelize"`
 }
 
 // +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TestList is a list of Test resources
 type TestList struct {
