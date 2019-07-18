@@ -2,6 +2,7 @@ package testprocessor
 
 import (
 	"fmt"
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,5 +70,9 @@ func (s *StateInitial) Process(processor *TestProcessor) error {
 	if !processor.CheckTestOwnedByUs() {
 		return fmt.Errorf("test could not be owned by us and its owner was not alive")
 	}
-	return nil
+	err := processor.setState(v1alpha1.StateInitializingTestCount, "Test is being processed by "+processor.knociNamespace + "/"+processor.knociName+".")
+	if err != nil {
+		return err
+	}
+	return processor.Process()
 }

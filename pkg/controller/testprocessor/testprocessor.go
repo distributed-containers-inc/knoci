@@ -28,8 +28,13 @@ type State interface {
 	Process(processor *TestProcessor) error
 }
 
-func (processor *TestProcessor) Process() {
+var states = map[string]State{
+	"": &StateInitial{},
+}
+
+func (processor *TestProcessor) Process() error {
 	processor.knociName = os.Getenv("MY_POD_NAME")
 	processor.knociNamespace = os.Getenv("MY_POD_NAMESPACE")
 	processor.knociUID = types.UID(os.Getenv("MY_POD_UID"))
+	return states[processor.currState].Process(processor)
 }
