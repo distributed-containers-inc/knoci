@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const Version = "v1alpha1"
@@ -25,16 +26,18 @@ type TestSpec struct {
 
 const StatePending = "Pending"
 const StateInitializingTestCount = "InitializingTestCount"
-const StateRunnable = "StateRunnable"
 const StateRunning = "Running"
 const StateSucceeded = "Success"
 const StateFailed = "Failed"
 
 type TestStatus struct {
-	State          string `json:"state"`
-	Reason         string `json:"reason"`
-	NumberOfTests  int64  `json:"numberOfTests"`
-	CanParallelize bool   `json:"canParallelize"`
+	State          string    `json:"state"`
+	Reason         string    `json:"reason"`
+	NumberOfTests  int64     `json:"numberOfTests"`
+	CanParallelize bool      `json:"canParallelize"`
+	OwnerUID       types.UID `json:"owner"`
+	OwnerName      string    `json:"ownerName"`
+	OwnerNamespace string    `json:"ownerNamespace"`
 }
 
 // +k8s:deepcopy-gen=true

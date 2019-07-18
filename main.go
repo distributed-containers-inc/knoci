@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	"github.com/distributed-containers-inc/knoci/pkg/controller"
-	"github.com/distributed-containers-inc/knoci/pkg/controller/testrunner"
+	"github.com/distributed-containers-inc/knoci/pkg/controller/testwatcher"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,15 +35,12 @@ func main() {
 	}
 	fmt.Println("Successfully created the Test resource definition.")
 
-	runner := testrunner.NewTestRunner(config)
-	err = runner.Start()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not start the runner: %s", err.Error())
+	if os.Getenv("MY_POD_NAME") == "" || os.Getenv("MY_POD_NAMESPACE") == "" {
+		fmt.Fprintln(os.Stderr, "MY_POD_NAME and MY_POD_NAMESPACE must be set. Are you using the provided knoci manifests?")
 		os.Exit(1)
 	}
-	err = runner.Wait()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
+	watcher := controller.TestWatcher{
+		TestsCli: testscli,
 	}
+	watcher.Run()
 }

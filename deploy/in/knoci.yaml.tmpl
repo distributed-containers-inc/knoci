@@ -76,3 +76,12 @@ spec:
       containers:
       - name: knoci
         image: {{getenv "REGISTRY_HOST"}}/knoci:{{getenv "IMAGE_TAG"}}
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
