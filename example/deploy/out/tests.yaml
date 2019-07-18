@@ -5,4 +5,4 @@ apiVersion: knoci.distributedcontainers.com/v1alpha1
 metadata:
   name: test-test
 spec:
-  image: 172.17.0.3:31653/webserver-doctest:661957eb5c2a
+  image: 172.17.0.3:31653/webserver-doctest:e7376bfde60d

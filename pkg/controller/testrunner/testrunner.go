@@ -59,11 +59,17 @@ func (runner *TestRunner) Start() error {
 			runner.holder.testStatuses.ForAllOfState(v1alpha1.StatePending, func(test *v1alpha1.Test) {
 				err := runner.ProcessTestParallelism(test)
 				if err != nil {
-					runner.errors <- err
+					runner.errors <- err //TODO use a logger instead of crashing2
 				}
 			})
 			runner.holder.testStatuses.ForAllOfState(v1alpha1.StateInitializingTestCount, func(test *v1alpha1.Test) {
 				err := runner.ProcessTestCount(test)
+				if err != nil {
+					runner.errors <- err
+				}
+			})
+			runner.holder.testStatuses.ForAllOfState(v1alpha1.StateRunnable, func(test *v1alpha1.Test) {
+				err := runner.ProcessRunnable(test)
 				if err != nil {
 					runner.errors <- err
 				}
