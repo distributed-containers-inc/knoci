@@ -36,15 +36,21 @@ func (runner *TestRunner) ProcessTestCount(test *v1alpha1.Test) error {
 	}
 	switch pod.Status.Phase {
 	case corev1.PodPending:
-		if status := pod.Status.ContainerStatuses[0].State.Waiting; status != nil {
-			_, err = runner.SetState(test, v1alpha1.StateInitializingTestCount, "Pod "+podName+" is pending: "+status.Message)
+		detailedMessage := pod.Status.Reason
+		if len(pod.Status.ContainerStatuses) == 1 {
+			if status := pod.Status.ContainerStatuses[0].State.Waiting; status != nil {
+				detailedMessage = status.Message
+			}
+		}
+		if detailedMessage == "" {
+			_, err = runner.SetState(test, v1alpha1.StateInitializingTestCount, "Pod "+podName+" is pending.")
 		} else {
-			_, err = runner.SetState(test, v1alpha1.StateInitializingTestCount, "Pod "+podName+" is pending")
+			_, err = runner.SetState(test, v1alpha1.StateInitializingTestCount, "Pod "+podName+" is pending: "+detailedMessage)
 		}
 	case corev1.PodRunning:
 		_, err = runner.SetState(test, v1alpha1.StateInitializingTestCount, "Pod "+podName+" is running")
 	case corev1.PodSucceeded:
-		logs, err := readPodLogs(runner, test.Namespace, test.Name)
+		logs, err := readPodLogs(runner, test.Namespace, podName)
 		if err != nil {
 			return err
 		}
@@ -56,7 +62,7 @@ func (runner *TestRunner) ProcessTestCount(test *v1alpha1.Test) error {
 				return err
 			}
 		} else {
-			_, err = runner.SetState(test, v1alpha1.StateRunnable, fmt.Sprintf("Test %s can run %d tests in parallel.", test, testCount))
+			_, err = runner.SetState(test, v1alpha1.StateRunnable, fmt.Sprintf("Test %s can run %d tests in parallel.", test.Name, testCount))
 			if err != nil {
 				return err
 			}
@@ -67,7 +73,17 @@ func (runner *TestRunner) ProcessTestCount(test *v1alpha1.Test) error {
 		if err != nil {
 			return err
 		}
-		_, err = runner.SetState(test, v1alpha1.StateRunnable, "Pod "+podName+" does not implement /num_test, running without concurrency.")
+		detailedMessage := pod.Status.Reason
+		if len(pod.Status.ContainerStatuses) == 1 {
+			if status := pod.Status.ContainerStatuses[0].State.Terminated; status != nil {
+				detailedMessage = status.Message
+			}
+		}
+		if detailedMessage == "" {
+			_, err = runner.SetState(test, v1alpha1.StateRunnable, "Pod "+podName+" does not implement /num_test, running without concurrency.")
+		} else {
+			_, err = runner.SetState(test, v1alpha1.StateRunnable, "Pod "+podName+" does not implement /num_test, running without concurrency: "+detailedMessage)
+		}
 	}
 	return err
 }

@@ -4,4 +4,4 @@ apiVersion: knoci.distributedcontainers.com/v1alpha1
 metadata:
   name: test-test
 spec:
-  image: "webserver:latest"
+  image: {{getenv "REGISTRY_HOST"}}/webserver-doctest:{{getenv "IMAGE_TAG"}}

@@ -24,10 +24,11 @@ func (runner *TestRunner) ProcessTestParallelism(test *v1alpha1.Test) error {
 				{
 					Name:    "numtestget",
 					Image:   test.Spec.Image,
-					Command: []string{"/num_test"},
+					Command: []string{"/num_tests"},
 					Args:    []string{},
 				},
 			},
+			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
 

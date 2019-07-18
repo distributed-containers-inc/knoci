@@ -86,8 +86,6 @@ func (runner *TestRunner) reconcile(tests []v1alpha1.Test) {
 	}
 	for key, test := range newTestMap {
 		if _, ok := runner.holder.tests[key]; !ok {
-			test.Status.State = v1alpha1.StatePending
-			runner.holder.TrackTest(test)
 			_, err := runner.SetState(test, v1alpha1.StatePending, "The test has just been created.")
 			if err != nil {
 				runner.errors <- err
