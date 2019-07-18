@@ -1,15 +1,16 @@
-package testrunner
+package states
 
 import (
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
+	"github.com/distributed-containers-inc/knoci/pkg/controller/testrunner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 	"strings"
 )
 
-func setTestCount(runner *TestRunner, test *v1alpha1.Test, count int64) error {
+func setTestCount(runner *testrunner.TestRunner, test *v1alpha1.Test, count int64) error {
 	test, err := runner.TestsCli.TestingV1alpha1().Tests(test.Namespace).Get(test.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -19,7 +20,7 @@ func setTestCount(runner *TestRunner, test *v1alpha1.Test, count int64) error {
 	return err
 }
 
-func readPodLogs(runner *TestRunner, namespace, name string) (string, error) {
+func readPodLogs(runner *testrunner.TestRunner, namespace, name string) (string, error) {
 	req := runner.KubeCli.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{})
 	data, err := req.DoRaw()
 	if err != nil {
@@ -28,7 +29,7 @@ func readPodLogs(runner *TestRunner, namespace, name string) (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func (runner *TestRunner) ProcessTestCount(test *v1alpha1.Test) error {
+func ProcessTestCount(runner *testrunner.TestRunner, test *v1alpha1.Test) error {
 	podName := "knoci-numtestget-" + test.Name
 	pod, err := runner.KubeCli.CoreV1().Pods(test.Namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
