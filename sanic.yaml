@@ -1,6 +1,7 @@
 commands:
   - name: codegen
     command: |
+      set -eu -o pipefail
       echo 'Building openapi schema...'
       export PACKAGE=github.com/distributed-containers-inc/knoci
       openapi-gen \
@@ -32,15 +33,25 @@ commands:
         --input-dirs="${PACKAGE}/pkg/apis/testing/v1alpha1" \
         --output-package="${PACKAGE}/pkg/client/listers"
 
+  - name: deploy
+    command: |
+      set -eu -o pipefail
+      sanic build --push
+      sanic kubectl delete crd tests.knoci.distributedcontainers.com || true
+      sanic deploy
+      (
+        cd example;
+        unset SANIC_ENV
+        sanic env dev sanic build --push;
+        sanic env dev sanic deploy;
+      )
 
-  - name: update
+  - name: full_deploy
     command: |
       set -eu -o pipefail
       echo 'Generating sources...'
       sanic run codegen
-      sanic build --push
-      sanic kubectl delete crd tests.knoci.distributedcontainers.com || true
-      sanic deploy
+      sanic run deploy
 
   - name: knoci_logs
     command: |
