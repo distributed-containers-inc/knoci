@@ -2,8 +2,11 @@ commands:
   - name: codegen
     command: |
       set -eu -o pipefail
-      echo 'Building openapi schema...'
       export PACKAGE=github.com/distributed-containers-inc/knoci
+
+      rm -rf $PACKAGE/pkg/client
+
+      echo 'Building openapi schema...'
       openapi-gen \
         -i $PACKAGE/pkg/apis/testing/v1alpha1 \
         -p $PACKAGE/pkg/apis/testing/v1alpha1 \
@@ -32,6 +35,15 @@ commands:
       lister-gen \
         --input-dirs="${PACKAGE}/pkg/apis/testing/v1alpha1" \
         --output-package="${PACKAGE}/pkg/client/listers"
+
+      echo 'Generating informers...'
+      informer-gen \
+        --input-dirs="${PACKAGE}/pkg/apis/testing/v1alpha1" \
+        --output-package="${PACKAGE}/pkg/client/informers" \
+        --internal-clientset-package="${PACKAGE}/pkg/client/versioned" \
+        --versioned-clientset-package="${PACKAGE}/pkg/client/versioned" \
+        --listers-package="${PACKAGE}/pkg/client/listers" \
+        --single-directory
 
   - name: deploy
     command: |
