@@ -50,21 +50,13 @@ func (s *StateInitializingTestCount) processPodCount(processor *TestProcessor) e
 	}
 	testCount, err := strconv.ParseInt(logs, 10, 64)
 	if err != nil {
-		err = processor.setState(v1alpha1.StateFailed, "Pod "+processor.numTestPodName+" did not return an integer ("+logs+") from /num_test")
-		if err != nil {
-			return err
-		}
-	} else {
-		err = processor.setState(v1alpha1.StateRunning, fmt.Sprintf("Test %s can run %d tests in parallel.", processor.TestName, testCount))
-		if err != nil {
-			return err
-		}
-		err = s.setNumTests(processor, testCount)
-		if err != nil {
-			return err
-		}
+		return processor.setState(v1alpha1.StateFailed, "Pod "+processor.numTestPodName+" did not return an integer ("+logs+") from /num_test")
 	}
-	return processor.Process()
+	err = processor.setState(v1alpha1.StateRunning, fmt.Sprintf("Test %s can run %d tests in parallel.", processor.TestName, testCount))
+	if err != nil {
+		return err
+	}
+	return s.setNumTests(processor, testCount)
 }
 
 func (s *StateInitializingTestCount) DeletePod(processor *TestProcessor) error {

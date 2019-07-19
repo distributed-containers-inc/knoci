@@ -74,9 +74,5 @@ func (s *StateInitial) Process(processor *TestProcessor) error {
 	if !processor.CheckTestOwnedByUs() {
 		return fmt.Errorf("test could not be owned by us and its owner was not alive")
 	}
-	err := processor.setState(v1alpha1.StateInitializingTestCount, "Test is being processed by "+processor.knociNamespace + "/"+processor.knociName)
-	if err != nil {
-		return err
-	}
-	return processor.Process()
+	return processor.setState(v1alpha1.StateInitializingTestCount, "Test is being processed by "+processor.knociNamespace + "/"+processor.knociName)
 }
