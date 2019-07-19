@@ -15,13 +15,16 @@ func (processor *TestProcessor) CheckTestOwnedByUs() bool {
 	if err != nil {
 		return false
 	}
-	return test.Status.OwnerUID == processor.knociUID
+	return test.Status != nil && test.Status.OwnerUID == processor.knociUID
 }
 
 func (processor *TestProcessor) CheckOwnerAlive() (bool, error) {
 	test, err := processor.getTest()
 	if err != nil {
 		return false, err
+	}
+	if test.Status == nil {
+		return false, nil //it's a new test
 	}
 	ownerName := test.Status.OwnerName
 	ownerNamespace := test.Status.OwnerNamespace
@@ -40,6 +43,9 @@ func (processor *TestProcessor) AtomicOwn() bool {
 	test, err := processor.getTest()
 	if err != nil {
 		return false
+	}
+	if test.Status == nil {
+		test.Status = &v1alpha1.TestStatus{}
 	}
 	test.Status.OwnerUID = processor.knociUID
 	test.Status.OwnerNamespace = processor.knociNamespace

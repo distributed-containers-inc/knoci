@@ -1,10 +1,9 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
@@ -16,7 +15,7 @@ import (
 type TestListWatcher struct {
 	TestsCli *versioned.Clientset
 
-	AddFunc func(test *v1alpha1.Test)
+	AddFunc    func(test *v1alpha1.Test)
 	DeleteFunc func(test *v1alpha1.Test)
 	UpdateFunc func(oldTest, newTest *v1alpha1.Test)
 }
@@ -24,10 +23,10 @@ type TestListWatcher struct {
 func (watcher *TestListWatcher) Run() {
 	_, controller := cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (object runtime.Object, e error) {
+			ListFunc: func(options metav1.ListOptions) (object runtime.Object, e error) {
 				return watcher.TestsCli.TestingV1alpha1().Tests("").List(options)
 			},
-			WatchFunc: func(options v1.ListOptions) (i watch.Interface, e error) {
+			WatchFunc: func(options metav1.ListOptions) (i watch.Interface, e error) {
 				return watcher.TestsCli.TestingV1alpha1().Tests("").Watch(options)
 			},
 		},

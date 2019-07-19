@@ -51,6 +51,7 @@ commands:
       sanic build --push
       sanic kubectl delete crd tests.knoci.distributedcontainers.com || true
       sanic deploy
+      sleep 2
       (
         cd example;
         unset SANIC_ENV
@@ -65,7 +66,7 @@ commands:
       sanic run codegen
       sanic run deploy
 
-  - name: knoci_logs
+  - name: logs
     command: |
       set -eu -o pipefail
       sanic kubectl get po -n kube-system -o name | grep knoci | xargs sanic kubectl logs -n kube-system
