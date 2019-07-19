@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
-	"k8s.io/apimachinery/pkg/fields"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"os"
 	"os/signal"
@@ -20,22 +22,26 @@ type TestListWatcher struct {
 }
 
 func (watcher *TestListWatcher) Run() {
-	watchlist := cache.NewListWatchFromClient(watcher.TestsCli.RESTClient(), "tests", "", fields.Everything())
 	_, controller := cache.NewInformer(
-		watchlist,
+		&cache.ListWatch{
+			ListFunc: func(options v1.ListOptions) (object runtime.Object, e error) {
+				return watcher.TestsCli.TestingV1alpha1().Tests("").List(options)
+			},
+			WatchFunc: func(options v1.ListOptions) (i watch.Interface, e error) {
+				return watcher.TestsCli.TestingV1alpha1().Tests("").Watch(options)
+			},
+		},
 		&v1alpha1.Test{},
 		time.Duration(0),
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				test := obj.(*v1alpha1.Test)
-				fmt.Println("Got a new test: "+test.Name)
 				if watcher.AddFunc != nil {
 					watcher.AddFunc(test)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				test := obj.(*v1alpha1.Test)
-				fmt.Println("Deleted test: "+test.Name)
 				if watcher.DeleteFunc != nil {
 					watcher.DeleteFunc(test)
 				}
@@ -43,7 +49,6 @@ func (watcher *TestListWatcher) Run() {
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				oldTest := oldObj.(*v1alpha1.Test)
 				newTest := newObj.(*v1alpha1.Test)
-				fmt.Println("Got a changed test: "+oldTest.Name+" -> "+newTest.Name)
 				if watcher.UpdateFunc != nil {
 					watcher.UpdateFunc(oldTest, newTest)
 				}
