@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type TestWatcher struct {
+type TestListWatcher struct {
 	TestsCli *versioned.Clientset
 
 	AddFunc func(test *v1alpha1.Test)
@@ -19,7 +19,7 @@ type TestWatcher struct {
 	UpdateFunc func(oldTest, newTest *v1alpha1.Test)
 }
 
-func (watcher *TestWatcher) Run() {
+func (watcher *TestListWatcher) Run() {
 	watchlist := cache.NewListWatchFromClient(watcher.TestsCli.RESTClient(), "tests", "", fields.Everything())
 	_, controller := cache.NewInformer(
 		watchlist,

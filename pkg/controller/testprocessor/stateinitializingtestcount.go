@@ -111,10 +111,6 @@ func (s *StateInitializingTestCount) CreatePod(processor *TestProcessor) error {
 	return err
 }
 
-func (s *StateInitializingTestCount) CheckSpecChanged(processor *TestProcessor) (bool, error) {
-
-}
-
 func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 	err := s.DeletePod(processor)
 	if err != nil && !errors.IsNotFound(err) {

@@ -17,10 +17,10 @@ type TestProcessor struct {
 	KubeCli   *kubernetes.Clientset
 	TestsCli  *versioned.Clientset
 
-	currState string
-
 	TestName      string
 	TestNamespace string
+
+	currState string
 
 	knociName      string
 	knociNamespace string

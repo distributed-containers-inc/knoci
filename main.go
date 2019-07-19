@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	"github.com/distributed-containers-inc/knoci/pkg/controller"
-	"github.com/distributed-containers-inc/knoci/pkg/controller/testwatcher"
+	"github.com/distributed-containers-inc/knoci/pkg/controller/testprocessor"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
 )
@@ -20,6 +22,7 @@ func main() {
 
 	apiextcli := apiextclient.NewForConfigOrDie(config)
 	testscli := versioned.NewForConfigOrDie(config)
+	kubecli := kubernetes.NewForConfigOrDie(config)
 
 	err = controller.CreateTestResourceDefinition(apiextcli)
 	if err != nil {
@@ -39,8 +42,28 @@ func main() {
 		fmt.Fprintln(os.Stderr, "MY_POD_NAME and MY_POD_NAMESPACE must be set. Are you using the provided knoci manifests?")
 		os.Exit(1)
 	}
-	watcher := controller.TestWatcher{
+	watchlist := controller.TestListWatcher{
 		TestsCli: testscli,
+		AddFunc: func(test *v1alpha1.Test) {
+			processor := testprocessor.TestProcessor{
+				ApiExtCli: apiextcli,
+				TestsCli:  testscli,
+				KubeCli:   kubecli,
+
+				TestName:      test.Name,
+				TestNamespace: test.Namespace,
+			}
+			err := processor.Process()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error while executing test %s in namespace %s: %s\n", test.Name, test.Namespace, err.Error())
+			}
+		},
+		DeleteFunc: func(test *v1alpha1.Test) {
+			//TODO
+		},
+		UpdateFunc: func(oldTest, newTest *v1alpha1.Test) {
+			//TODO
+		},
 	}
-	watcher.Run()
+	watchlist.Run()
 }
