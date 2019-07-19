@@ -42,6 +42,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "MY_POD_NAME and MY_POD_NAMESPACE must be set. Are you using the provided knoci manifests?")
 		os.Exit(1)
 	}
+	if os.Getenv("MY_POD_UID") == "" {
+		fmt.Fprintln(os.Stderr, "MY_POD_UID must be set. Are you using the provided knoci manifest?")
+		os.Exit(1)
+	}
 	watchlist := controller.TestListWatcher{
 		TestsCli: testscli,
 		AddFunc: func(test *v1alpha1.Test) {
