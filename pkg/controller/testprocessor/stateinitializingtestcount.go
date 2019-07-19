@@ -1,6 +1,7 @@
 package testprocessor
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,15 +68,18 @@ func (s *StateInitializingTestCount) processPodCount(processor *TestProcessor) e
 	return processor.Process()
 }
 
-func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
+func (s *StateInitializingTestCount) DeletePod(processor *TestProcessor) error {
 	err := processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Delete(
 		processor.numTestPodName,
 		&metav1.DeleteOptions{GracePeriodSeconds: &[]int64{0}[0]},
 	)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("could not delete existing 'numtestget' named %s", processor.numTestPodName)
+		return err
 	}
+	return nil
+}
 
+func (s *StateInitializingTestCount) CreatePod(processor *TestProcessor) error {
 	test, err := processor.getTest()
 	if err != nil {
 		return fmt.Errorf("could not get the test: %s", err.Error())
@@ -103,17 +107,50 @@ func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 		},
 	}
 
-	pod, err = processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Create(pod)
+	_, err = processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Create(pod)
+	return err
+}
+
+func (s *StateInitializingTestCount) CheckSpecChanged(processor *TestProcessor) (bool, error) {
+
+}
+
+func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
+	err := s.DeletePod(processor)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("could not delete existing 'numtestget' named %s", processor.numTestPodName)
+	}
+
+	err = s.CreatePod(processor)
 	if err != nil {
 		return fmt.Errorf("could not create a 'numtestget' pod: %s", err.Error())
 	}
 
 	watch, err := processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Watch(
 		metav1.ListOptions{FieldSelector: "metadata.name=" + processor.numTestPodName})
+
 	if err != nil {
 		return fmt.Errorf("could not watch 'numtestget' pod: %s", err.Error())
 	}
+	defer watch.Stop()
+
 	for event := range watch.ResultChan() {
+		newHash, err := processor.hashTest()
+		if err != nil {
+			return fmt.Errorf("could not hash the tests spec: %s", err.Error())
+		}
+		if !bytes.Equal(newHash, processor.hash) {
+			err = s.DeletePod(processor)
+			if err != nil {
+				return err
+			}
+			err = processor.setState(v1alpha1.StateInitial, "the spec changed while the test was running")
+			if err != nil {
+				return err
+			}
+			return processor.Process()
+		}
+
 		pod := event.Object.(*corev1.Pod)
 		detailedMessage := pod.Status.Reason
 		if len(pod.Status.ContainerStatuses) == 1 {
@@ -135,7 +172,7 @@ func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 			watch.Stop()
 			err = s.processFailedPodCount(processor)
 		case corev1.PodRunning:
-			err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is pending: "+detailedMessage)
+			err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is running: "+detailedMessage)
 		case corev1.PodUnknown:
 			watch.Stop()
 			err = processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
@@ -144,5 +181,5 @@ func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 			return err
 		}
 	}
-	return fmt.Errorf("watch ended before we could figure out pod status for %s/%s", processor.TestNamespace, processor.numTestPodName)
+	return fmt.Errorf("watch ended before we could figure out pod status for pod %s in namespace %s", processor.numTestPodName, processor.TestNamespace)
 }

@@ -36,8 +36,9 @@ type State interface {
 }
 
 var states = map[string]State{
-	"":                                  &StateInitial{},
+	v1alpha1.StateInitial:               &StateInitial{},
 	v1alpha1.StateInitializingTestCount: &StateInitializingTestCount{},
+	v1alpha1.StateRunning:               &StateRunning{},
 }
 
 func (processor *TestProcessor) Process() error {
@@ -60,5 +61,11 @@ func (processor *TestProcessor) Process() error {
 	}
 	processor.hash = newHash
 
-	return states[processor.currState].Process(processor)
+	for processor.currState != v1alpha1.StateRunning && processor.currState != v1alpha1.StateFailed {
+		err := states[processor.currState].Process(processor)
+		if err != nil {
+			return fmt.Errorf("failed to process test %s in state %s: %s", processor.TestName, processor.currState, err.Error())
+		}
+	}
+	return nil
 }
