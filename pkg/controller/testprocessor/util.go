@@ -33,7 +33,9 @@ func (processor *TestProcessor) setState(newState, reason string) error {
 	return err
 }
 
-func hashTest(test *v1alpha1.Test) []byte {
+func HashTest(test *v1alpha1.Test) []byte {
+	//todo should use image manifest instead of just string representation
+	//so that two tagged images with the same manifest do not constitute a change
 	hash := sha256.New()
 	testSpecStr := fmt.Sprintf("%+v", test.Spec)
 	hash.Write([]byte(testSpecStr))

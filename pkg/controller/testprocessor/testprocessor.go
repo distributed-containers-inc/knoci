@@ -30,7 +30,6 @@ type TestProcessor struct {
 
 	numTestPodName string
 	testPodName    string
-	hash           []byte
 }
 
 type State interface {
@@ -64,7 +63,6 @@ func New(
 
 		numTestPodName: "knoci-numtests-" + test.Name,
 		testPodName:    "knoci-test-" + test.Name,
-		hash:           hashTest(test),
 	}
 	proc.ctx, proc.cancel = context.WithCancel(context.TODO())
 
@@ -72,15 +70,19 @@ func New(
 }
 
 func (processor *TestProcessor) Process() error {
-	if err := processor.ctx.Err(); err != nil {
-		return err
-	}
-
 	for processor.currState != v1alpha1.StateRunning && processor.currState != v1alpha1.StateFailed {
+		if err := processor.ctx.Err(); err != nil {
+			return err
+		}
+
 		err := states[processor.currState].Process(processor)
 		if err != nil {
 			return fmt.Errorf("failed to process test %s in state %s: %s", processor.TestName, processor.currState, err.Error())
 		}
 	}
 	return nil
+}
+
+func (processor *TestProcessor) Cancel() {
+	processor.cancel()
 }
