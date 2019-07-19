@@ -1,6 +1,8 @@
 package testprocessor
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,4 +31,15 @@ func (processor *TestProcessor) setState(newState, reason string) error {
 	_, err = processor.updateTestStatus(test)
 	processor.currState = test.Status.State
 	return err
+}
+
+func (processor *TestProcessor) hashTest() ([]byte, error) {
+	test, err := processor.getTest()
+	if err != nil {
+		return nil, err
+	}
+	hash := sha256.New()
+	testSpecStr := fmt.Sprintf("%+v", test.Spec)
+	hash.Write([]byte(testSpecStr))
+	return hash.Sum(nil), nil
 }

@@ -1,6 +1,8 @@
 package testprocessor
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -26,6 +28,7 @@ type TestProcessor struct {
 
 	numTestPodName string
 	testPodName    string
+	hash           []byte
 }
 
 type State interface {
@@ -43,6 +46,19 @@ func (processor *TestProcessor) Process() error {
 	processor.knociUID = types.UID(os.Getenv("MY_POD_UID"))
 	processor.numTestPodName = "knoci-numtests-" + processor.TestName
 	processor.testPodName = "knoci-test-" + processor.TestName
+
+	newHash, err := processor.hashTest()
+	if err != nil {
+		return fmt.Errorf("could not hash the tests spec: %s", err.Error())
+	}
+
+	if processor.hash != nil && !bytes.Equal(processor.hash, newHash) {
+		err = processor.setState(v1alpha1.StateInitializingTestCount, "Test's spec has changed, restarting it")
+		if err != nil {
+			return err
+		}
+	}
+	processor.hash = newHash
 
 	return states[processor.currState].Process(processor)
 }
