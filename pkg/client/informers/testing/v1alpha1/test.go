@@ -22,7 +22,7 @@ import (
 	time "time"
 
 	testingv1alpha1 "github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
-	internalinterfaces "github.com/distributed-containers-inc/knoci/pkg/client/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/distributed-containers-inc/knoci/pkg/client/informers/internalinterfaces"
 	v1alpha1 "github.com/distributed-containers-inc/knoci/pkg/client/listers/testing/v1alpha1"
 	versioned "github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
