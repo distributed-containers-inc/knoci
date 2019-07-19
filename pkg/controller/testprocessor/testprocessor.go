@@ -1,6 +1,7 @@
 package testprocessor
 
 import (
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +23,9 @@ type TestProcessor struct {
 	knociName      string
 	knociNamespace string
 	knociUID       types.UID
+
+	numTestPodName string
+	testPodName    string
 }
 
 type State interface {
@@ -29,12 +33,16 @@ type State interface {
 }
 
 var states = map[string]State{
-	"": &StateInitial{},
+	"":                                  &StateInitial{},
+	v1alpha1.StateInitializingTestCount: &StateInitializingTestCount{},
 }
 
 func (processor *TestProcessor) Process() error {
 	processor.knociName = os.Getenv("MY_POD_NAME")
 	processor.knociNamespace = os.Getenv("MY_POD_NAMESPACE")
 	processor.knociUID = types.UID(os.Getenv("MY_POD_UID"))
+	processor.numTestPodName = "knoci-numtests-" + processor.TestName
+	processor.testPodName = "knoci-test-" + processor.TestName
+
 	return states[processor.currState].Process(processor)
 }
