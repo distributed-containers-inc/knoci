@@ -99,9 +99,9 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 			case corev1.PodSucceeded:
 				return processor.setState(v1alpha1.StateSuccess, "all tests succeeded")
 			case corev1.PodFailed:
-				return processor.setState(v1alpha1.StateSuccess, fmt.Sprintf("tests failed, see logs of pod %s in namespace %s for details", processor.testPodName, processor.TestNamespace))
+				return processor.setState(v1alpha1.StateFailed, fmt.Sprintf("tests failed, see logs of pod %s in namespace %s for details", processor.testPodName, processor.TestNamespace))
 			case corev1.PodUnknown:
-				return processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
+				return processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage+" (the server it was scheduled on might be down)")
 			}
 		case <-processor.ctx.Done():
 			return processor.ctx.Err()
