@@ -85,28 +85,23 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 					detailedMessage = containerState.Waiting.Message
 				}
 			}
-			err = nil
 			switch pod.Status.Phase {
 			case corev1.PodPending:
 				err = processor.setState(v1alpha1.StateRunning, "pod is pending: "+detailedMessage)
-			case corev1.PodSucceeded:
-				watch.Stop()
-				err = processor.setState(v1alpha1.StateSuccess, "all tests succeeded")
-			case corev1.PodFailed:
-				watch.Stop()
-				err = processor.setState(v1alpha1.StateSuccess, fmt.Sprintf("tests failed, see logs of pod %s in namespace %s for details", processor.testPodName, processor.TestNamespace))
-			case corev1.PodRunning:
-				err = processor.setState(v1alpha1.StateRunning, "pod is running: "+detailedMessage)
-			case corev1.PodUnknown:
-				watch.Stop()
-				err = processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
 				if err != nil {
 					return err
 				}
-				return fmt.Errorf("could not reach pod %s in namespace %s: %s", processor.testPodName, processor.TestNamespace, detailedMessage)
-			}
-			if err != nil {
-				return err
+			case corev1.PodRunning:
+				err = processor.setState(v1alpha1.StateRunning, "pod is running: "+detailedMessage)
+				if err != nil {
+					return err
+				}
+			case corev1.PodSucceeded:
+				return processor.setState(v1alpha1.StateSuccess, "all tests succeeded")
+			case corev1.PodFailed:
+				return processor.setState(v1alpha1.StateSuccess, fmt.Sprintf("tests failed, see logs of pod %s in namespace %s for details", processor.testPodName, processor.TestNamespace))
+			case corev1.PodUnknown:
+				return processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
 			}
 		case <-processor.ctx.Done():
 			return processor.ctx.Err()

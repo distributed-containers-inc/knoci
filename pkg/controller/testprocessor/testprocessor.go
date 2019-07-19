@@ -8,6 +8,7 @@ import (
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 	"os"
 )
 
@@ -37,7 +38,7 @@ type State interface {
 }
 
 var states = map[string]State{
-	v1alpha1.StateInitial:               &StateInitial{},
+	v1alpha1.StatePending:               &StateInitial{},
 	v1alpha1.StateInitializingTestCount: &StateInitializingTestCount{},
 	v1alpha1.StateRunning:               &StateRunning{},
 }
@@ -57,6 +58,8 @@ func New(
 		TestName:      test.Name,
 		TestNamespace: test.Namespace,
 
+		currState: v1alpha1.StatePending,
+
 		knociName:      os.Getenv("MY_POD_NAME"),
 		knociNamespace: os.Getenv("MY_POD_NAMESPACE"),
 		knociUID:       types.UID(os.Getenv("MY_POD_UID")),
@@ -70,7 +73,8 @@ func New(
 }
 
 func (processor *TestProcessor) Process() error {
-	for processor.currState != v1alpha1.StateRunning && processor.currState != v1alpha1.StateFailed {
+	for processor.currState != v1alpha1.StateSuccess && processor.currState != v1alpha1.StateFailed {
+		klog.V(1).Infof("Test %s in namespace %s is in state %s", processor.TestName, processor.TestNamespace, processor.currState)
 		if err := processor.ctx.Err(); err != nil {
 			return err
 		}
@@ -80,6 +84,7 @@ func (processor *TestProcessor) Process() error {
 			return fmt.Errorf("failed to process test %s in state %s: %s", processor.TestName, processor.currState, err.Error())
 		}
 	}
+	klog.Infof("Test %s in namespace %s finished with state %s", processor.TestName, processor.TestNamespace, processor.currState)
 	return nil
 }
 

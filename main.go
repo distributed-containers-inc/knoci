@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	"os"
 	"sync"
 )
@@ -23,6 +25,9 @@ type namespaceNamePair struct {
 }
 
 func main() {
+	klog.InitFlags(nil)
+	flag.Parse()
+
 	//TODO function is too big, refactor it
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -62,6 +67,7 @@ func main() {
 	watchlist := controller.TestListWatcher{
 		TestsCli: testscli,
 		AddFunc: func(test *v1alpha1.Test) {
+			klog.Infof("Detected a new test named %s in namespace %s", test.Name, test.Namespace)
 			processor := testprocessor.New(
 				apiextcli,
 				kubecli,
@@ -80,6 +86,7 @@ func main() {
 			}()
 		},
 		DeleteFunc: func(test *v1alpha1.Test) {
+			klog.Infof("Detected a deleted test named %s in namespace %s", test.Name, test.Namespace)
 			processorsMutex.Lock()
 			defer processorsMutex.Unlock()
 			processor := processors[namespaceNamePair{test.Namespace, test.Name}]
@@ -94,7 +101,10 @@ func main() {
 				return
 			}
 			if bytes.Equal(testprocessor.HashTest(oldTest), testprocessor.HashTest(newTest)) {
+				klog.V(1).Infof("There was an inconsequential change to the test named %s in namespace %s", oldTest.Name, oldTest.Namespace)
 				return
+			} else {
+				klog.V(1).Infof("There was a change to the test named %s in namespace %s, so it will be recreated", oldTest.Name, oldTest.Namespace)
 			}
 			processor.Cancel()
 			processor = testprocessor.New(

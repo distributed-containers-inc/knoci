@@ -21,6 +21,7 @@ rules:
   - create
   - list
   - delete
+  - watch
 - apiGroups:
   - apiextensions.k8s.io
   resources:
@@ -76,6 +77,8 @@ spec:
       containers:
       - name: knoci
         image: {{getenv "REGISTRY_HOST"}}/knoci:{{getenv "IMAGE_TAG"}}
+        args:
+        - -v=5
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:

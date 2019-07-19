@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/klog"
 	"time"
 )
 
@@ -64,16 +65,20 @@ func (s *StateInitial) Process(processor *TestProcessor) error {
 		}
 
 		if !processor.CheckTestOwnedByUs() {
+			klog.V(2).Infof("Test %s in namespace %s is not owned by us.", processor.TestName, processor.TestNamespace)
 			alive, err := processor.CheckOwnerAlive()
 			if err != nil {
 				return fmt.Errorf("could not check if tests owner is alive: %s", err.Error())
 			}
 			if alive {
+				klog.V(2).Infof("Test %s in namespace %s is owned by another living knoci controller.", processor.TestName, processor.TestNamespace)
 				return nil
 			}
 			if processor.AtomicOwn() {
+				klog.V(1).Infof("Claimed test %s in namespace %s, because its former controller has died.", processor.TestName, processor.TestNamespace)
 				break
 			}
+			klog.Infof("Could not claim test %s in namespace %s whose owner was dead -- perhaps there was a race, trying again.", processor.TestName, processor.TestNamespace)
 		}
 		time.Sleep(time.Millisecond * time.Duration(rand.IntnRange(100, 500)))
 	}

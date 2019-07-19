@@ -24,7 +24,7 @@ type TestSpec struct {
 	Parallelism int64 `json:"parallelism"`
 }
 
-const StateInitial = ""
+const StatePending = "Pending"
 const StateInitializingTestCount = "InitializingTestCount"
 const StateRunning = "Running"
 const StateSuccess = "Success"

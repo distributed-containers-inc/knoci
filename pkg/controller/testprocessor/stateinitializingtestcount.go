@@ -137,24 +137,23 @@ func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 					detailedMessage = containerState.Waiting.Message
 				}
 			}
-			err = nil
 			switch pod.Status.Phase {
 			case corev1.PodPending:
 				err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is pending: "+detailedMessage)
-			case corev1.PodSucceeded:
-				watch.Stop()
-				err = s.processPodCount(processor)
-			case corev1.PodFailed:
-				watch.Stop()
-				err = s.processFailedPodCount(processor)
+				if err != nil {
+					return err
+				}
 			case corev1.PodRunning:
 				err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is running: "+detailedMessage)
+				if err != nil {
+					return err
+				}
+			case corev1.PodSucceeded:
+				return s.processPodCount(processor)
+			case corev1.PodFailed:
+				return s.processFailedPodCount(processor)
 			case corev1.PodUnknown:
-				watch.Stop()
-				err = processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
-			}
-			if err != nil {
-				return err
+				return processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
 			}
 		case <-processor.ctx.Done():
 			return processor.ctx.Err()
