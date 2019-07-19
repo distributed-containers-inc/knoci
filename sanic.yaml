@@ -69,7 +69,7 @@ commands:
   - name: logs
     command: |
       set -eu -o pipefail
-      sanic kubectl get po -n kube-system -o name | grep knoci | xargs sanic kubectl logs -n kube-system
+      sanic kubectl get po -n kube-system -o name | grep knoci | xargs sanic kubectl logs -n kube-system $@
 
 
 environments:
