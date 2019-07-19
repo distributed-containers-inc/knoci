@@ -33,13 +33,9 @@ func (processor *TestProcessor) setState(newState, reason string) error {
 	return err
 }
 
-func (processor *TestProcessor) hashTest() ([]byte, error) {
-	test, err := processor.getTest()
-	if err != nil {
-		return nil, err
-	}
+func hashTest(test *v1alpha1.Test) []byte {
 	hash := sha256.New()
 	testSpecStr := fmt.Sprintf("%+v", test.Spec)
 	hash.Write([]byte(testSpecStr))
-	return hash.Sum(nil), nil
+	return hash.Sum(nil)
 }

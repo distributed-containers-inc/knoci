@@ -1,7 +1,6 @@
 package testprocessor
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -129,53 +128,44 @@ func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 		return fmt.Errorf("could not watch 'numtestget' pod: %s", err.Error())
 	}
 	defer watch.Stop()
+	for {
+		select {
+		case event, ok := <-watch.ResultChan():
+			if !ok {
+				return fmt.Errorf("watch ended before we could figure out pod status for pod %s in namespace %s", processor.numTestPodName, processor.TestNamespace)
+			}
 
-	for event := range watch.ResultChan() {
-		newHash, err := processor.hashTest()
-		if err != nil {
-			return fmt.Errorf("could not hash the tests spec: %s", err.Error())
-		}
-		if !bytes.Equal(newHash, processor.hash) {
-			err = s.DeletePod(processor)
+			pod := event.Object.(*corev1.Pod)
+			detailedMessage := pod.Status.Reason
+			if len(pod.Status.ContainerStatuses) == 1 {
+				containerState := pod.Status.ContainerStatuses[0].State
+				if containerState.Terminated != nil {
+					detailedMessage = containerState.Terminated.Message
+				} else if containerState.Waiting != nil {
+					detailedMessage = containerState.Waiting.Message
+				}
+			}
+			err = nil
+			switch pod.Status.Phase {
+			case corev1.PodPending:
+				err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is pending: "+detailedMessage)
+			case corev1.PodSucceeded:
+				watch.Stop()
+				err = s.processPodCount(processor)
+			case corev1.PodFailed:
+				watch.Stop()
+				err = s.processFailedPodCount(processor)
+			case corev1.PodRunning:
+				err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is running: "+detailedMessage)
+			case corev1.PodUnknown:
+				watch.Stop()
+				err = processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
+			}
 			if err != nil {
 				return err
 			}
-			err = processor.setState(v1alpha1.StateInitial, "the spec changed while the test was running")
-			if err != nil {
-				return err
-			}
-			return processor.Process()
-		}
-
-		pod := event.Object.(*corev1.Pod)
-		detailedMessage := pod.Status.Reason
-		if len(pod.Status.ContainerStatuses) == 1 {
-			containerState := pod.Status.ContainerStatuses[0].State
-			if containerState.Terminated != nil {
-				detailedMessage = containerState.Terminated.Message
-			} else if containerState.Waiting != nil {
-				detailedMessage = containerState.Waiting.Message
-			}
-		}
-		err = nil
-		switch pod.Status.Phase {
-		case corev1.PodPending:
-			err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is pending: "+detailedMessage)
-		case corev1.PodSucceeded:
-			watch.Stop()
-			err = s.processPodCount(processor)
-		case corev1.PodFailed:
-			watch.Stop()
-			err = s.processFailedPodCount(processor)
-		case corev1.PodRunning:
-			err = processor.setState(v1alpha1.StateInitializingTestCount, "pod is running: "+detailedMessage)
-		case corev1.PodUnknown:
-			watch.Stop()
-			err = processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage)
-		}
-		if err != nil {
-			return err
+		case <-processor.ctx.Done():
+			return processor.ctx.Err()
 		}
 	}
-	return fmt.Errorf("watch ended before we could figure out pod status for pod %s in namespace %s", processor.numTestPodName, processor.TestNamespace)
 }

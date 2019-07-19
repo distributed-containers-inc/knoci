@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
@@ -21,8 +22,8 @@ func main() {
 	}
 
 	apiextcli := apiextclient.NewForConfigOrDie(config)
-	testscli := versioned.NewForConfigOrDie(config)
 	kubecli := kubernetes.NewForConfigOrDie(config)
+	testscli := versioned.NewForConfigOrDie(config)
 
 	err = controller.CreateTestResourceDefinition(apiextcli)
 	if err != nil {
@@ -49,21 +50,19 @@ func main() {
 	watchlist := controller.TestListWatcher{
 		TestsCli: testscli,
 		AddFunc: func(test *v1alpha1.Test) {
-			processor := testprocessor.TestProcessor{
-				ApiExtCli: apiextcli,
-				TestsCli:  testscli,
-				KubeCli:   kubecli,
-
-				TestName:      test.Name,
-				TestNamespace: test.Namespace,
-			}
+			processor := testprocessor.New(
+				apiextcli,
+				kubecli,
+				testscli,
+				test,
+			)
 			err := processor.Process()
-			if err != nil {
+			if err != nil && err != context.Canceled {
 				fmt.Fprintf(os.Stderr, "Error while executing test %s in namespace %s: %s\n", test.Name, test.Namespace, err.Error())
 			}
 		},
 		DeleteFunc: func(test *v1alpha1.Test) {
-			//TODO
+			//TODO processor context cancel
 		},
 		UpdateFunc: func(oldTest, newTest *v1alpha1.Test) {
 			//TODO

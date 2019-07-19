@@ -1,7 +1,7 @@
 package testprocessor
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/client/versioned"
@@ -20,6 +20,8 @@ type TestProcessor struct {
 	TestName      string
 	TestNamespace string
 
+	ctx       context.Context
+	cancel    context.CancelFunc
 	currState string
 
 	knociName      string
@@ -41,25 +43,38 @@ var states = map[string]State{
 	v1alpha1.StateRunning:               &StateRunning{},
 }
 
+func New(
+	apiExtCli *apiextclient.Clientset,
+	kubeCli *kubernetes.Clientset,
+	testsCli *versioned.Clientset,
+
+	test *v1alpha1.Test,
+) *TestProcessor {
+	proc := &TestProcessor{
+		ApiExtCli: apiExtCli,
+		KubeCli:   kubeCli,
+		TestsCli:  testsCli,
+
+		TestName:      test.Name,
+		TestNamespace: test.Namespace,
+
+		knociName:      os.Getenv("MY_POD_NAME"),
+		knociNamespace: os.Getenv("MY_POD_NAMESPACE"),
+		knociUID:       types.UID(os.Getenv("MY_POD_UID")),
+
+		numTestPodName: "knoci-numtests-" + test.Name,
+		testPodName:    "knoci-test-" + test.Name,
+		hash:           hashTest(test),
+	}
+	proc.ctx, proc.cancel = context.WithCancel(context.TODO())
+
+	return proc
+}
+
 func (processor *TestProcessor) Process() error {
-	processor.knociName = os.Getenv("MY_POD_NAME")
-	processor.knociNamespace = os.Getenv("MY_POD_NAMESPACE")
-	processor.knociUID = types.UID(os.Getenv("MY_POD_UID"))
-	processor.numTestPodName = "knoci-numtests-" + processor.TestName
-	processor.testPodName = "knoci-test-" + processor.TestName
-
-	newHash, err := processor.hashTest()
-	if err != nil {
-		return fmt.Errorf("could not hash the tests spec: %s", err.Error())
+	if err := processor.ctx.Err(); err != nil {
+		return err
 	}
-
-	if processor.hash != nil && !bytes.Equal(processor.hash, newHash) {
-		err = processor.setState(v1alpha1.StateInitializingTestCount, "Test's spec has changed, restarting it")
-		if err != nil {
-			return err
-		}
-	}
-	processor.hash = newHash
 
 	for processor.currState != v1alpha1.StateRunning && processor.currState != v1alpha1.StateFailed {
 		err := states[processor.currState].Process(processor)

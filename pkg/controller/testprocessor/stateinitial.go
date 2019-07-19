@@ -53,6 +53,10 @@ type StateInitial struct{}
 
 func (s *StateInitial) Process(processor *TestProcessor) error {
 	for i := 0; i < 3; i++ {
+		if err := processor.ctx.Err(); err != nil {
+			return err
+		}
+
 		if !processor.CheckTestOwnedByUs() {
 			alive, err := processor.CheckOwnerAlive()
 			if err != nil {
