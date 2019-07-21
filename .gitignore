@@ -3,6 +3,4 @@
 /logs
 /deploy/out
 venv3.7/
-/example/logs
-/example/deploy/out
 __pycache__
