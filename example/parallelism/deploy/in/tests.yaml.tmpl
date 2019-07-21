@@ -1,0 +1,7 @@
+---
+kind: Test
+apiVersion: knoci.distributedcontainers.com/v1alpha1
+metadata:
+  name: parallelism-test
+spec:
+  image: {{getenv "REGISTRY_HOST"}}/parallelism:{{getenv "IMAGE_TAG"}}

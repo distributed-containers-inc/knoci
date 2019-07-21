@@ -6,10 +6,8 @@ This allows you to turn `build && test && deploy` into `build && deploy`, with y
 ## Benefits
 
 1. You can run your tests anywhere you could run a cluster.  This makes it possible to exactly reproduce what happens in a CI pipeline locally
-2. Tests can be completely parallelized, using the same autoscaling logic you'd use for pods
+2. Tests can be completely parallelized, using the same autoscaling logic you'd use for pods (see [example/parallelism](https://github.com/distributed-containers-inc/knoci/tree/master/example/parallelism))
 3. Knoci checksums your tests, and only runs ones whose files or dependencies have changed
-
-© Distributed Containers Inc. 2019
 
 ## Usage
 
@@ -42,3 +40,5 @@ status:
 To build knoci,
 1. First install [sanic](https://github.com/distributed-containers-inc/sanic) and its dependencies
 2. Run `sanic env dev sanic build` to build the latest version of the docker image.
+
+© Distributed Containers Inc. 2019
