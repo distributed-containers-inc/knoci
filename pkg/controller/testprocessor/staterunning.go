@@ -2,6 +2,7 @@ package testprocessor
 
 import (
 	"fmt"
+	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
 	"github.com/distributed-containers-inc/knoci/pkg/controller/testrunner"
 )
 
@@ -18,6 +19,7 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 		processor.TestNamespace,
 		processor.TestName,
 		processor.TestSpec,
+		processor.ctx,
 	)
 
 	if test.Status == nil {
@@ -29,7 +31,18 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 		runner.NumberOfTests = test.Status.NumberOfTests
 		runner.Parallelize = true
 	}
+
 	runner.SplittingTime = 10 //wait 10 seconds before killing & splitting
 
-	return runner.Run()
+	err = runner.Start()
+	if err != nil {
+		return processor.setState(
+			v1alpha1.StateFailed,
+			fmt.Sprintf(
+				"Got an error while starting the runner for this test: %s",
+				err.Error(),
+			),
+		)
+	}
+	return nil
 }

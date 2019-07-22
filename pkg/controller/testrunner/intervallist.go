@@ -31,7 +31,7 @@ func (list IntervalList) validGivenEnd(end int64) bool {
 	return expectedStart == end+1
 }
 
-func (runner *TestRunner) LoadPreviousIntervals() (IntervalList, error) {
+func (runner *TestRunner) LoadPreviousIntervals() (*IntervalList, error) {
 	podList, err := runner.kubeCli.CoreV1().Pods(runner.testNamespace).List(metav1.ListOptions{
 		LabelSelector: "knoci-test-name="+runner.testName,
 	})
@@ -62,4 +62,5 @@ func (runner *TestRunner) LoadPreviousIntervals() (IntervalList, error) {
 	if !intervalList.validGivenEnd(runner.NumberOfTests) {
 		return nil, fmt.Errorf("the number of pods has changed")
 	}
+	return intervalList, nil
 }
