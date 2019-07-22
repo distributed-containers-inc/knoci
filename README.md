@@ -12,10 +12,7 @@ This allows you to turn `build && test && deploy` into `build && deploy`, with y
 ## Usage
 
 ### Installing the Operator
-TODO
-
-### Dockerizing your tests
-TODO
+See `deploy/in/knoci.yaml.tmpl` for an RBAC example
 
 ### Deploying your tests
 #### Complete spec for a Test
@@ -30,7 +27,6 @@ metadata:
   namespace: api-unit-tests
 spec:
   image: registry.example.com/ApiUnitTests:v1.0.0
-  parallelization: 3
 status:
   state: Running
 ```
