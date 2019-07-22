@@ -20,8 +20,6 @@ type Test struct {
 
 type TestSpec struct {
 	Image string `json:"image"`
-	// +optional
-	Parallelism int64 `json:"parallelism"`
 }
 
 const StatePending = "Pending"

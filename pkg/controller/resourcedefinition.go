@@ -37,10 +37,9 @@ func CreateTestResourceDefinition(clientset apiextclient.Interface) error {
 		EnableValidation:      true,
 		Version:               testingv1alpha1.Version,
 		GetOpenAPIDefinitions: testingv1alpha1.GetOpenAPIDefinitions,
-
-		SpecReplicasPath: ".spec.parallelism",
-		StatusReplicasPath: ".status.parallelism",
 	})
+
+	resourceDef.Spec.Subresources.Scale = nil
 
 	return CreateResourceDefinition(clientset, resourceDef)
 }
