@@ -19,6 +19,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
@@ -27,7 +28,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20190718063925-2249b0201a0a
 	k8s.io/apimachinery v0.0.0-20190717022731-0bb8574e0887
 	k8s.io/client-go v0.0.0-20190717023132-0c47f9da0001
-	k8s.io/klog v0.3.3 // indirect
+	k8s.io/klog v0.3.3
 	k8s.io/kube-openapi v0.0.0-20190718094010-3cf2ea392886
 	k8s.io/utils v0.0.0-20190712204705-3dccf664f023 // indirect
 )

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
-	"strconv"
 )
 
 //An IntervalList is a partitioning of (1...global end) into [start, end] pairs
@@ -40,21 +39,9 @@ func (runner *TestRunner) LoadPreviousIntervals() (*IntervalList, error) {
 	}
 	intervalList := new(IntervalList)
 	for _, pod := range podList.Items {
-		startTimeStr, ok := pod.Labels["knoci-test-start"]
-		if !ok {
-			return nil, fmt.Errorf("pod was missing a start test, even though it was labeled with knoci-test-name: %s", pod.Name)
-		}
-		endTimeStr, ok := pod.Labels["knoci-test-end"]
-		if !ok {
-			return nil, fmt.Errorf("pod was missing an end test, even though it was labeled with knoci-test-name: %s", pod.Name)
-		}
-		startTime, err := strconv.ParseInt(startTimeStr, 10, 64)
+		startTime, endTime, err := parsePodStartEndTests(&pod)
 		if err != nil {
-			return nil, fmt.Errorf("pod had invalid, non-numeric start time (%s): %s", startTimeStr, err.Error())
-		}
-		endTime, err := strconv.ParseInt(endTimeStr, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("pod had invalid, non-numeric end time (%s): %s", endTimeStr, err.Error())
+			return nil, err
 		}
 		intervalList.append(startTime, endTime)
 	}

@@ -34,12 +34,12 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 
 	runner.SplittingTime = 10 //wait 10 seconds before killing & splitting
 
-	err = runner.Start()
+	err = runner.Run()
 	if err != nil {
 		return processor.setState(
 			v1alpha1.StateFailed,
 			fmt.Sprintf(
-				"Got an error while starting the runner for this test: %s",
+				"Error while running: %s",
 				err.Error(),
 			),
 		)
