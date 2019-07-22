@@ -2,109 +2,34 @@ package testprocessor
 
 import (
 	"fmt"
-	"github.com/distributed-containers-inc/knoci/pkg/apis/testing/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/distributed-containers-inc/knoci/pkg/controller/testrunner"
 )
 
 type StateRunning struct{}
 
-func (s *StateRunning) DeletePod(processor *TestProcessor) error {
-	err := processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Delete(
-		processor.testPodName,
-		&metav1.DeleteOptions{GracePeriodSeconds: &[]int64{0}[0]},
-	)
-	if err != nil && !errors.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
-func (s *StateRunning) CreatePod(processor *TestProcessor) error {
+func (s *StateRunning) Process(processor *TestProcessor) error {
 	test, err := processor.getTest()
 	if err != nil {
-		return fmt.Errorf("could not get the test: %s", err.Error())
+		return fmt.Errorf("could not get test: %s", err.Error())
 	}
 
-	pod := &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Pod",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      processor.testPodName,
-			Namespace: processor.TestNamespace,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "test",
-					Image: test.Spec.Image,
-				},
-			},
-			RestartPolicy: corev1.RestartPolicyNever,
-		},
-	}
+	runner := testrunner.New(
+		processor.KubeCli,
+		processor.TestNamespace,
+		processor.TestName,
+		processor.TestSpec,
+	)
 
-	_, err = processor.KubeCli.CoreV1().Pods(pod.Namespace).Create(pod)
-	return err
-}
-
-func (s *StateRunning) Process(processor *TestProcessor) error {
-	err := s.DeletePod(processor)
-	if err != nil {
-		return fmt.Errorf("failure while deleting the test pod: %s", err.Error())
+	if test.Status == nil {
+		return fmt.Errorf("test status was nil")
 	}
-	err = s.CreatePod(processor)
-	if err != nil {
-		return fmt.Errorf("failure while creating test pod: %s", err.Error())
+	if test.Status.NumberOfTests <= 0 {
+		runner.Parallelize = false
+	} else {
+		runner.NumberOfTests = test.Status.NumberOfTests
+		runner.Parallelize = true
 	}
-	watch, err := processor.KubeCli.CoreV1().Pods(processor.TestNamespace).Watch(
-		metav1.ListOptions{FieldSelector: "metadata.name=" + processor.testPodName})
-	if err != nil {
-		return fmt.Errorf("could not watch test pod: %s", err.Error())
-	}
-	defer watch.Stop()
+	runner.SplittingTime = 10 //wait 10 seconds before killing & splitting
 
-	for {
-		select {
-		case event, ok := <-watch.ResultChan():
-			if !ok {
-				return fmt.Errorf("watch ended before we could figure out pod status for pod %s in namespace %s", processor.testPodName, processor.TestNamespace)
-			}
-
-			pod := event.Object.(*corev1.Pod)
-
-			detailedMessage := pod.Status.Reason
-			if len(pod.Status.ContainerStatuses) == 1 {
-				containerState := pod.Status.ContainerStatuses[0].State
-				if containerState.Terminated != nil {
-					detailedMessage = containerState.Terminated.Message
-				} else if containerState.Waiting != nil {
-					detailedMessage = containerState.Waiting.Message
-				}
-			}
-			switch pod.Status.Phase {
-			case corev1.PodPending:
-				err = processor.setState(v1alpha1.StateRunning, "pod is pending: "+detailedMessage)
-				if err != nil {
-					return err
-				}
-			case corev1.PodRunning:
-				err = processor.setState(v1alpha1.StateRunning, "pod is running: "+detailedMessage)
-				if err != nil {
-					return err
-				}
-			case corev1.PodSucceeded:
-				return processor.setState(v1alpha1.StateSuccess, "all tests succeeded")
-			case corev1.PodFailed:
-				return processor.setState(v1alpha1.StateFailed, fmt.Sprintf("tests failed, see logs of pod %s in namespace %s for details", processor.testPodName, processor.TestNamespace))
-			case corev1.PodUnknown:
-				return processor.setState(v1alpha1.StateFailed, "could not get pod information: "+detailedMessage+" (the server it was scheduled on might be down)")
-			}
-		case <-processor.ctx.Done():
-			return processor.ctx.Err()
-		}
-	}
+	return runner.Run()
 }

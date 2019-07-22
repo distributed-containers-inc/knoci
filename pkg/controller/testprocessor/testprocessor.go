@@ -20,6 +20,7 @@ type TestProcessor struct {
 
 	TestName      string
 	TestNamespace string
+	TestSpec      *v1alpha1.TestSpec
 
 	ctx       context.Context
 	cancel    context.CancelFunc
@@ -30,7 +31,7 @@ type TestProcessor struct {
 	knociUID       types.UID
 
 	numTestPodName string
-	testPodName    string
+	testName       string
 }
 
 type State interface {
@@ -57,6 +58,7 @@ func New(
 
 		TestName:      test.Name,
 		TestNamespace: test.Namespace,
+		TestSpec:      &test.Spec,
 
 		currState: v1alpha1.StatePending,
 
@@ -65,7 +67,7 @@ func New(
 		knociUID:       types.UID(os.Getenv("MY_POD_UID")),
 
 		numTestPodName: "knoci-numtests-" + test.Name,
-		testPodName:    "knoci-test-" + test.Name,
+		testName:       test.Name,
 	}
 	proc.ctx, proc.cancel = context.WithCancel(context.TODO())
 
