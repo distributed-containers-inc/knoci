@@ -38,11 +38,10 @@ func (s *StateRunning) Process(processor *TestProcessor) error {
 	if err != nil {
 		return processor.setState(
 			v1alpha1.StateFailed,
-			fmt.Sprintf(
-				"Error while running: %s",
-				err.Error(),
-			),
+			fmt.Sprintf("%s", err.Error()),
 		)
 	}
-	return nil
+	return processor.setState(
+		v1alpha1.StateSuccess,
+		"All tests passed.")
 }

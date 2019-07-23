@@ -15,17 +15,16 @@ import (
 )
 
 type TestRunner struct {
-	kubeCli       *kubernetes.Clientset
-	testNamespace string
-	testName      string
-	testSpec      *v1alpha1.TestSpec
-	ctx           context.Context
+	kubeCli          *kubernetes.Clientset
+	testNamespace    string
+	testName         string
+	testSpec         *v1alpha1.TestSpec
+	ctx              context.Context
+	watchEstablished chan struct{}
 
 	NumberOfTests int64
 	Parallelize   bool
 	SplittingTime int64
-
-	watchEstablished sync.Cond
 
 	podMutex      sync.Mutex
 	runningPods   map[types.UID]*corev1.Pod
@@ -41,13 +40,15 @@ func New(
 	testSpec *v1alpha1.TestSpec,
 	ctx context.Context,
 ) *TestRunner {
-	return &TestRunner{
+	runner := &TestRunner{
 		kubeCli:       kubeCLI,
 		testNamespace: testNamespace,
 		testName:      testName,
 		testSpec:      testSpec,
 		ctx:           ctx,
 	}
+	runner.watchEstablished = make(chan struct{})
+	return runner
 }
 
 func (runner *TestRunner) deletePods() error {
@@ -137,7 +138,7 @@ func (runner *TestRunner) watchPods(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	runner.watchEstablished.Broadcast()
+	close(runner.watchEstablished)
 	defer watch.Stop()
 	for runner.podsAreRunning() {
 		select {
@@ -161,7 +162,7 @@ func (runner *TestRunner) podsAreRunning() bool {
 }
 
 func (runner *TestRunner) startInitialPods(oldIntervals *IntervalList) error {
-	runner.watchEstablished.Wait()
+	<-runner.watchEstablished
 	//todo use old intervals
 	if runner.Parallelize {
 		return runner.createPod(&[]int64{1}[0], &runner.NumberOfTests)
@@ -210,9 +211,9 @@ func (runner *TestRunner) Run() error {
 	}
 
 	eg, ctx := errgroup.WithContext(runner.ctx)
-	eg.Go(func() error {return runner.watchPods(ctx)})
-	eg.Go(func() error {return runner.tryToSplit(ctx)})
-	eg.Go(func() error {return runner.startInitialPods(oldIntervals)})
+	eg.Go(func() error { return runner.watchPods(ctx) })
+	eg.Go(func() error { return runner.tryToSplit(ctx) })
+	eg.Go(func() error { return runner.startInitialPods(oldIntervals) })
 
 	err = eg.Wait()
 	if err != context.Canceled {

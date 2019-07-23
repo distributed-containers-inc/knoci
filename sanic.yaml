@@ -53,7 +53,7 @@ commands:
       sanic deploy
       sleep 2
       (
-        cd example;
+        cd example/python-doctest;
         unset SANIC_ENV
         sanic env dev sanic build --push;
         sanic env dev sanic deploy;

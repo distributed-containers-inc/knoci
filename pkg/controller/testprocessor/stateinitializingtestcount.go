@@ -105,7 +105,7 @@ func (s *StateInitializingTestCount) CreatePod(processor *TestProcessor) error {
 func (s *StateInitializingTestCount) Process(processor *TestProcessor) error {
 	err := s.DeletePod(processor)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("could not delete existing 'numtestget' named %s", processor.numTestPodName)
+		return fmt.Errorf("could not delete existing 'numtestget' named %s: %s", processor.numTestPodName, err.Error())
 	}
 
 	err = s.CreatePod(processor)
